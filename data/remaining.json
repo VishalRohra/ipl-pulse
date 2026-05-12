@@ -1,0 +1,20 @@
+{
+  "source": "crickonomics.com/predictor as of 2026-05-11",
+  "matches": [
+    { "id": 56, "date": "2026-05-12", "venue": "Ahmedabad",   "home": "gt",   "away": "srh"  },
+    { "id": 57, "date": "2026-05-13", "venue": "Nava Raipur", "home": "rcb",  "away": "kkr"  },
+    { "id": 58, "date": "2026-05-14", "venue": "Dharamsala",  "home": "pbks", "away": "mi"   },
+    { "id": 59, "date": "2026-05-15", "venue": "Lucknow",     "home": "lsg",  "away": "csk"  },
+    { "id": 60, "date": "2026-05-16", "venue": "Kolkata",     "home": "kkr",  "away": "gt"   },
+    { "id": 61, "date": "2026-05-17", "venue": "Dharamsala",  "home": "pbks", "away": "rcb"  },
+    { "id": 62, "date": "2026-05-17", "venue": "Delhi",       "home": "dc",   "away": "rr"   },
+    { "id": 63, "date": "2026-05-18", "venue": "Chennai",     "home": "csk",  "away": "srh"  },
+    { "id": 64, "date": "2026-05-19", "venue": "Jaipur",      "home": "rr",   "away": "lsg"  },
+    { "id": 65, "date": "2026-05-20", "venue": "Kolkata",     "home": "kkr",  "away": "mi"   },
+    { "id": 66, "date": "2026-05-21", "venue": "Ahmedabad",   "home": "gt",   "away": "csk"  },
+    { "id": 67, "date": "2026-05-22", "venue": "Hyderabad",   "home": "srh",  "away": "rcb"  },
+    { "id": 68, "date": "2026-05-23", "venue": "Lucknow",     "home": "lsg",  "away": "pbks" },
+    { "id": 69, "date": "2026-05-24", "venue": "Mumbai",      "home": "mi",   "away": "rr"   },
+    { "id": 70, "date": "2026-05-24", "venue": "Kolkata",     "home": "kkr",  "away": "dc"   }
+  ]
+}

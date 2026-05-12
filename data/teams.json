@@ -1,0 +1,14 @@
+{
+  "teams": [
+    { "slug": "rcb", "short": "RCB", "name": "Royal Challengers Bengaluru", "primary": "#EC1C24", "secondary": "#000000" },
+    { "slug": "srh", "short": "SRH", "name": "Sunrisers Hyderabad",          "primary": "#F7A721", "secondary": "#E95E0B" },
+    { "slug": "gt",  "short": "GT",  "name": "Gujarat Titans",                "primary": "#1B2133", "secondary": "#B5A872" },
+    { "slug": "pbks","short": "PBKS","name": "Punjab Kings",                  "primary": "#A91F4A", "secondary": "#DCDDDF" },
+    { "slug": "csk", "short": "CSK", "name": "Chennai Super Kings",           "primary": "#F9CD05", "secondary": "#0081E9" },
+    { "slug": "rr",  "short": "RR",  "name": "Rajasthan Royals",              "primary": "#EA1A85", "secondary": "#254AA5" },
+    { "slug": "dc",  "short": "DC",  "name": "Delhi Capitals",                "primary": "#17449B", "secondary": "#EF1C25" },
+    { "slug": "kkr", "short": "KKR", "name": "Kolkata Knight Riders",         "primary": "#3A225D", "secondary": "#FFCD00" },
+    { "slug": "mi",  "short": "MI",  "name": "Mumbai Indians",                "primary": "#005DA0", "secondary": "#D1AB3E" },
+    { "slug": "lsg", "short": "LSG", "name": "Lucknow Super Giants",          "primary": "#3496D4", "secondary": "#E04F16" }
+  ]
+}

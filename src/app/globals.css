@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f1f5f9;        /* slate-100 — soft blue-tinted surface */
+  --surface: #ffffff;
+  --surface-elev: #ffffff;
+  --border: #e2e8f0;            /* slate-200 */
+  --text: #0f172a;              /* slate-900 */
+  --text-muted: #64748b;        /* slate-500 */
+  --accent: #0284c7;            /* sky-600 */
+  --accent-soft: #e0f2fe;       /* sky-100 */
+  --success: #059669;           /* emerald-600 */
+  --danger: #dc2626;            /* red-600 */
 }
 
 @theme inline {
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-foreground: var(--text);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Smooth pulse used to highlight a value just after it changes. */
+@keyframes pulse-bg {
+  0% { background-color: rgba(2, 132, 199, 0.18); }
+  100% { background-color: transparent; }
+}
+
+.pulse-on-change {
+  animation: pulse-bg 700ms ease-out;
 }
