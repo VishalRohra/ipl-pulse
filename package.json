@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "update": "tsx scripts/update-standings.mts"
+    "update": "tsx scripts/update-standings.mts",
+    "scrape": "tsx scripts/scrape-standings.mts"
   },
   "dependencies": {
     "clsx": "^2.1.1",

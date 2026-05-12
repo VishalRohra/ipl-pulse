@@ -1,19 +1,99 @@
 {
-  "asOf": "2026-05-12T23:30:00+05:30",
+  "asOf": "2026-05-12T19:50:58.809Z",
   "completedThrough": 56,
   "totalLeagueMatches": 70,
   "playoffSpots": 4,
-  "source": "Manual update after matches #55 (PBKS v DC) and #56 (GT v SRH). Cross-referenced ESPNCricinfo. Each team's played + remaining = 14.",
+  "source": "Source-of-truth: published IPL points table (ESPNCricinfo / IPLT20). Updated after match #56 (GT beat SRH by 82 runs). Do NOT derive standings from individual match reports — always cross-check against the live table.",
   "standings": [
-    { "slug": "gt",   "played": 12, "won": 8, "lost": 4, "noResult": 0, "points": 16, "nrr":  0.541 },
-    { "slug": "rcb",  "played": 11, "won": 7, "lost": 4, "noResult": 0, "points": 14, "nrr":  1.103 },
-    { "slug": "srh",  "played": 12, "won": 7, "lost": 5, "noResult": 0, "points": 14, "nrr":  0.336 },
-    { "slug": "pbks", "played": 12, "won": 6, "lost": 5, "noResult": 1, "points": 13, "nrr":  0.402 },
-    { "slug": "dc",   "played": 12, "won": 6, "lost": 6, "noResult": 0, "points": 12, "nrr": -0.927 },
-    { "slug": "csk",  "played": 11, "won": 6, "lost": 5, "noResult": 0, "points": 12, "nrr":  0.185 },
-    { "slug": "rr",   "played": 11, "won": 6, "lost": 5, "noResult": 0, "points": 12, "nrr":  0.082 },
-    { "slug": "kkr",  "played": 10, "won": 4, "lost": 5, "noResult": 1, "points":  9, "nrr": -0.169 },
-    { "slug": "mi",   "played": 11, "won": 3, "lost": 8, "noResult": 0, "points":  6, "nrr": -0.585 },
-    { "slug": "lsg",  "played": 11, "won": 3, "lost": 8, "noResult": 0, "points":  6, "nrr": -0.907 }
+    {
+      "slug": "gt",
+      "played": 12,
+      "won": 8,
+      "lost": 4,
+      "noResult": 0,
+      "points": 16,
+      "nrr": 0.551
+    },
+    {
+      "slug": "rcb",
+      "played": 11,
+      "won": 7,
+      "lost": 4,
+      "noResult": 0,
+      "points": 14,
+      "nrr": 1.103
+    },
+    {
+      "slug": "srh",
+      "played": 12,
+      "won": 7,
+      "lost": 5,
+      "noResult": 0,
+      "points": 14,
+      "nrr": 0.331
+    },
+    {
+      "slug": "pbks",
+      "played": 11,
+      "won": 6,
+      "lost": 4,
+      "noResult": 1,
+      "points": 13,
+      "nrr": 0.428
+    },
+    {
+      "slug": "csk",
+      "played": 11,
+      "won": 6,
+      "lost": 5,
+      "noResult": 0,
+      "points": 12,
+      "nrr": 0.185
+    },
+    {
+      "slug": "rr",
+      "played": 11,
+      "won": 6,
+      "lost": 5,
+      "noResult": 0,
+      "points": 12,
+      "nrr": 0.082
+    },
+    {
+      "slug": "dc",
+      "played": 12,
+      "won": 5,
+      "lost": 7,
+      "noResult": 0,
+      "points": 10,
+      "nrr": -0.993
+    },
+    {
+      "slug": "kkr",
+      "played": 10,
+      "won": 4,
+      "lost": 5,
+      "noResult": 1,
+      "points": 9,
+      "nrr": -0.169
+    },
+    {
+      "slug": "mi",
+      "played": 11,
+      "won": 3,
+      "lost": 8,
+      "noResult": 0,
+      "points": 6,
+      "nrr": -0.585
+    },
+    {
+      "slug": "lsg",
+      "played": 11,
+      "won": 3,
+      "lost": 8,
+      "noResult": 0,
+      "points": 6,
+      "nrr": -0.907
+    }
   ]
 }
