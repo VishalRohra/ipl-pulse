@@ -99,11 +99,19 @@ export function simulate(
   }
 
   // Pre-resolve match data into parallel typed arrays for the hot loop.
+  // For picks with explicit outcomes, pre-compute the exact innings totals
+  // (winnerScore, winnerOvers, loserScore, loserOvers) so the inner loop
+  // doesn't branch on outcome type.
   const M = remaining.length;
   const homeIdx = new Int32Array(M);
   const awayIdx = new Int32Array(M);
   const pickedWinnerIdx = new Int32Array(M); // -1 = no pick
-  const pickedMargin = new Float64Array(M); // NaN = no margin pick
+  const pickedMarginRuns = new Float64Array(M); // NaN = sample, finite = exact-runs pick
+  const pickedWinnerScore = new Float64Array(M);  // valid only if pickedExact[m] = 1
+  const pickedWinnerOvers = new Float64Array(M);
+  const pickedLoserScore = new Float64Array(M);
+  const pickedLoserOvers = new Float64Array(M);
+  const pickedExact = new Uint8Array(M); // 1 = use the exact innings totals above
   const pHomeWins = new Float64Array(M);
   for (let m = 0; m < M; m++) {
     homeIdx[m] = slugIndex.get(remaining[m].home)!;
@@ -111,10 +119,25 @@ export function simulate(
     const pick = scenario[remaining[m].id];
     if (pick) {
       pickedWinnerIdx[m] = slugIndex.get(pick.winner)!;
-      pickedMargin[m] = pick.marginRuns ?? NaN;
+      pickedMarginRuns[m] = pick.marginRuns ?? NaN;
+      const out = pick.outcome;
+      if (out?.type === "runs") {
+        pickedExact[m] = 1;
+        pickedWinnerScore[m] = parScore;
+        pickedWinnerOvers[m] = 20;
+        pickedLoserScore[m] = Math.max(parScore - out.marginRuns, 0);
+        pickedLoserOvers[m] = 20;
+      } else if (out?.type === "wickets") {
+        pickedExact[m] = 1;
+        // Loser batted first to par, winner chased and won with `ballsRemaining` to spare.
+        pickedLoserScore[m] = parScore;
+        pickedLoserOvers[m] = 20;
+        pickedWinnerScore[m] = parScore + 1;
+        pickedWinnerOvers[m] = 20 - out.ballsRemaining / 6;
+      }
     } else {
       pickedWinnerIdx[m] = -1;
-      pickedMargin[m] = NaN;
+      pickedMarginRuns[m] = NaN;
     }
     if (options.priors) {
       const ph = options.priors[remaining[m].home] ?? 0.5;
@@ -160,16 +183,33 @@ export function simulate(
       const a = awayIdx[m];
 
       let winnerIdx: number;
-      let margin: number;
+      let winnerScore: number;
+      let winnerOvers: number;
+      let loserScore: number;
+      let loserOvers: number;
+
       const pi = pickedWinnerIdx[m];
-      if (pi >= 0) {
+      if (pi >= 0 && pickedExact[m] === 1) {
+        // Exact innings totals already computed (runs- or wickets-style win).
         winnerIdx = pi;
-        margin = Number.isNaN(pickedMargin[m])
-          ? Math.abs(sampleNormal(15, marginStd, rng))
-          : pickedMargin[m];
+        winnerScore = pickedWinnerScore[m];
+        winnerOvers = pickedWinnerOvers[m];
+        loserScore = pickedLoserScore[m];
+        loserOvers = pickedLoserOvers[m];
       } else {
-        winnerIdx = rng() < pHomeWins[m] ? h : a;
-        margin = Math.abs(sampleNormal(0, marginStd, rng));
+        // No exact outcome: sample a winner (if not picked) and a runs margin.
+        if (pi >= 0) {
+          winnerIdx = pi;
+        } else {
+          winnerIdx = rng() < pHomeWins[m] ? h : a;
+        }
+        const margin = Number.isNaN(pickedMarginRuns[m])
+          ? Math.abs(sampleNormal(pi >= 0 ? 15 : 0, marginStd, rng))
+          : pickedMarginRuns[m];
+        winnerScore = parScore;
+        winnerOvers = 20;
+        loserScore = Math.max(parScore - margin, 0);
+        loserOvers = 20;
       }
       const loserIdx = winnerIdx === h ? a : h;
 
@@ -179,17 +219,14 @@ export function simulate(
       playedDelta[winnerIdx] += 1;
       playedDelta[loserIdx] += 1;
 
-      const winnerScore = parScore;
-      const loserScore = parScore - margin > 0 ? parScore - margin : 0;
-      // Both teams faced 20 overs (no all-out) for the simulated par-score scenario.
       rf[winnerIdx] += winnerScore;
-      of[winnerIdx] += 20;
+      of[winnerIdx] += winnerOvers;
       ra[winnerIdx] += loserScore;
-      ob[winnerIdx] += 20;
+      ob[winnerIdx] += loserOvers;
       rf[loserIdx] += loserScore;
-      of[loserIdx] += 20;
+      of[loserIdx] += loserOvers;
       ra[loserIdx] += winnerScore;
-      ob[loserIdx] += 20;
+      ob[loserIdx] += winnerOvers;
     }
 
     // Materialize standings into the reusable sort buffer.

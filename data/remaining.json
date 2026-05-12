@@ -1,7 +1,6 @@
 {
-  "source": "crickonomics.com/predictor as of 2026-05-11",
+  "source": "crickonomics.com/predictor as of 2026-05-12 (post-#56)",
   "matches": [
-    { "id": 56, "date": "2026-05-12", "venue": "Ahmedabad",   "home": "gt",   "away": "srh"  },
     { "id": 57, "date": "2026-05-13", "venue": "Nava Raipur", "home": "rcb",  "away": "kkr"  },
     { "id": 58, "date": "2026-05-14", "venue": "Dharamsala",  "home": "pbks", "away": "mi"   },
     { "id": 59, "date": "2026-05-15", "venue": "Lucknow",     "home": "lsg",  "away": "csk"  },

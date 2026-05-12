@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState, useDeferredValue } from "react";
+import { useMemo, useState, useDeferredValue, useEffect } from "react";
 import type { TeamSlug, TeamStanding } from "@/lib/types";
+import { REMAINING, team, SIM_SEED } from "@/lib/data";
 import {
-  REMAINING,
-  team,
-  SIM_SEED,
-} from "@/lib/data";
-import { approximateComponents, nrrAfterWinByRuns } from "@/lib/nrr";
+  approximateComponents,
+  nrrAfterWinByRuns,
+  nrrAfterWinByWickets,
+} from "@/lib/nrr";
 import { simulate } from "@/lib/simulate";
 import { cn } from "@/lib/utils";
 import { TrendingUp } from "lucide-react";
@@ -16,21 +16,23 @@ interface Props {
   standings: TeamStanding[];
 }
 
+type Mode = "runs" | "wickets";
+
 /**
  * NRR Sensitivity panel — the cricket-nerd differentiator.
  *
- * For a chosen remaining match + winner + margin (runs):
- *  - shows both teams' NRR after the match (NRR math is exact)
- *  - shows both teams' resulting playoff %
- *  - all updates live as the user drags the margin slider
- *
- * This is what every other IPL predictor handwaves: margin actually changes NRR,
- * which is the tiebreaker that decides who advances when points tie.
+ * Cricket has two outcome types (decided by the toss + which side reaches the
+ * target first):
+ *   - "by runs": batting-first team defends, chase falls short by N runs
+ *   - "by wickets": chasing team wins with N balls remaining
+ * Both move NRR — but quite differently. This panel shows both modes side by side.
  */
 export function NRRSensitivity({ standings }: Props) {
   const [matchId, setMatchId] = useState<number>(REMAINING[0].id);
   const [winnerOverride, setWinnerOverride] = useState<TeamSlug | null>(null);
-  const [margin, setMargin] = useState<number>(20);
+  const [mode, setMode] = useState<Mode>("runs");
+  const [marginRuns, setMarginRuns] = useState<number>(20);
+  const [ballsRemaining, setBallsRemaining] = useState<number>(12);
 
   const match = useMemo(
     () => REMAINING.find((m) => m.id === matchId)!,
@@ -39,13 +41,17 @@ export function NRRSensitivity({ standings }: Props) {
   const winner = winnerOverride ?? match.home;
   const loser = winner === match.home ? match.away : match.home;
 
-  // Reset winner override when match changes
+  // Reset winner override + sensible defaults when the match changes
+  useEffect(() => {
+    setWinnerOverride(null);
+  }, [matchId]);
+
   const homeT = team(match.home);
   const awayT = team(match.away);
   const winnerT = team(winner);
   const loserT = team(loser);
 
-  // Exact NRR math: layer this match's runs onto each team's prior components.
+  // Exact NRR math for the chosen outcome
   const { winnerNrrBefore, winnerNrrAfter, loserNrrBefore, loserNrrAfter } = useMemo(() => {
     const winnerStanding = standings.find((s) => s.slug === winner)!;
     const loserStanding = standings.find((s) => s.slug === loser)!;
@@ -57,22 +63,66 @@ export function NRRSensitivity({ standings }: Props) {
       loserStanding.nrr,
       loserStanding.played - loserStanding.noResult
     );
-    return {
-      winnerNrrBefore: winnerStanding.nrr,
-      winnerNrrAfter: nrrAfterWinByRuns(winnerComp, margin),
-      loserNrrBefore: loserStanding.nrr,
-      // Losing by `margin` runs = winning by `-margin` (the loser's view).
-      loserNrrAfter: nrrAfterWinByRuns(loserComp, -margin),
-    };
-  }, [standings, winner, loser, margin]);
 
-  // Simulated qualifying % at this margin vs. without picking the match
-  const deferredMargin = useDeferredValue(margin);
+    if (mode === "runs") {
+      return {
+        winnerNrrBefore: winnerStanding.nrr,
+        winnerNrrAfter: nrrAfterWinByRuns(winnerComp, marginRuns),
+        loserNrrBefore: loserStanding.nrr,
+        // Loser perspective: NRR contribution = -marginRuns / 20 — equivalent to
+        // calling nrrAfterWinByRuns with a negative margin (function is symmetric).
+        loserNrrAfter: nrrAfterWinByRuns(loserComp, -marginRuns),
+      };
+    } else {
+      // wickets-style win: chase target=180, win with `ballsRemaining` to spare
+      const parScore = 180;
+      const oversToWin = 20 - ballsRemaining / 6;
+      const target = parScore;
+      return {
+        winnerNrrBefore: winnerStanding.nrr,
+        winnerNrrAfter: nrrAfterWinByWickets(winnerComp, target, oversToWin),
+        loserNrrBefore: loserStanding.nrr,
+        // Loser batted first to `target`, opponent chased target+1 in oversToWin.
+        // Loser's contribution: (target / 20) - (target+1 / oversToWin)
+        loserNrrAfter: nrrAfterWinByWickets(loserComp, target + 1, 20)
+          - (target + 1) / 20 + (target + 1) / 20 + // (no-op for clarity)
+          0, // placeholder; computed below
+      };
+    }
+  }, [standings, winner, loser, mode, marginRuns, ballsRemaining]);
+
+  // Computing loser NRR correctly for wickets case is tricky to inline above; recompute cleanly:
+  const fixedLoserNrr = useMemo(() => {
+    if (mode === "runs") return loserNrrAfter;
+    const loserStanding = standings.find((s) => s.slug === loser)!;
+    const comp = approximateComponents(
+      loserStanding.nrr,
+      loserStanding.played - loserStanding.noResult
+    );
+    // Loser batted first, scored 180 in 20 overs. Winner chased 181 in oversToWin overs.
+    // Loser contribution = (180/20) - (181/oversToWin)
+    const parScore = 180;
+    const oversToWin = 20 - ballsRemaining / 6;
+    const newRf = comp.runsFor + parScore;
+    const newOf = comp.oversFor + 20;
+    const newRa = comp.runsAgainst + (parScore + 1);
+    const newOb = comp.oversAgainst + oversToWin;
+    return newRf / newOf - newRa / newOb;
+  }, [mode, ballsRemaining, standings, loser, loserNrrAfter]);
+
+  // Live qualifying %
+  const deferredMode = useDeferredValue(mode);
+  const deferredMargin = useDeferredValue(marginRuns);
+  const deferredBalls = useDeferredValue(ballsRemaining);
+
   const sim = useMemo(() => {
+    const outcome = deferredMode === "runs"
+      ? { type: "runs" as const, marginRuns: deferredMargin }
+      : { type: "wickets" as const, ballsRemaining: deferredBalls };
     const withPick = simulate(
       standings,
       REMAINING,
-      { [matchId]: { winner, marginRuns: deferredMargin } },
+      { [matchId]: { winner, outcome } },
       { iterations: 5000, seed: SIM_SEED }
     );
     const without = simulate(standings, REMAINING, {}, { iterations: 5000, seed: SIM_SEED });
@@ -82,7 +132,7 @@ export function NRRSensitivity({ standings }: Props) {
       loserPct: withPick.qualifyPct[loser],
       loserBasePct: without.qualifyPct[loser],
     };
-  }, [standings, matchId, winner, loser, deferredMargin]);
+  }, [standings, matchId, winner, loser, deferredMode, deferredMargin, deferredBalls]);
 
   return (
     <div className="rounded-xl border border-sky-200 bg-white shadow-sm overflow-hidden">
@@ -90,24 +140,23 @@ export function NRRSensitivity({ standings }: Props) {
         <TrendingUp className="h-4 w-4 text-sky-600" />
         <h3 className="text-sm font-semibold text-slate-900">NRR sensitivity</h3>
         <span className="text-xs text-slate-500 ml-auto hidden sm:inline">
-          how much does win margin matter?
+          how much does the result type / margin matter?
         </span>
       </div>
       <div className="p-4 space-y-4">
-        <div>
-          <p className="text-xs text-slate-600 mb-2">
-            NRR is the tiebreaker when teams finish on equal points. A 30-run win bumps NRR
-            far more than a last-ball thriller — and that gap can be the difference between
-            playoffs and elimination. Pick a match below and drag the slider to see exactly
-            how the winning margin moves both teams' NRR and qualification odds.
-          </p>
-        </div>
+        <p className="text-xs text-slate-600">
+          The toss decides who bats first — and that determines whether the winner wins{" "}
+          <strong>by runs</strong> (defending a total) or <strong>by wickets</strong> (chasing).
+          The two outcomes move NRR in opposite ways: bigger run-margins help the winner more,
+          but chasing fast (more balls remaining) helps the winner even more. Try both modes
+          and see which case favors your team.
+        </p>
 
         <div className="flex items-center gap-2 flex-wrap">
           <label className="text-xs text-slate-500">Match:</label>
           <select
             value={matchId}
-            onChange={(e) => { setMatchId(Number(e.target.value)); setWinnerOverride(null); }}
+            onChange={(e) => setMatchId(Number(e.target.value))}
             className="text-sm rounded border border-slate-300 bg-white px-2 py-1"
           >
             {REMAINING.map((m) => (
@@ -142,22 +191,48 @@ export function NRRSensitivity({ standings }: Props) {
           </button>
         </div>
 
-        <div>
-          <div className="flex items-baseline justify-between mb-1">
-            <label className="text-xs text-slate-500">
-              Win margin: <span className="font-mono text-slate-900 font-semibold">{margin}</span> runs
-            </label>
-            <span className="text-[11px] text-slate-400">drag the slider</span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={100}
-            value={margin}
-            onChange={(e) => setMargin(Number(e.target.value))}
-            className="w-full accent-sky-600"
-          />
+        <div className="flex items-center gap-2 flex-wrap">
+          <label className="text-xs text-slate-500">How they won:</label>
+          <ModeButton active={mode === "runs"} onClick={() => setMode("runs")}>
+            By runs (bat first, defend)
+          </ModeButton>
+          <ModeButton active={mode === "wickets"} onClick={() => setMode("wickets")}>
+            By wickets (chase)
+          </ModeButton>
         </div>
+
+        {mode === "runs" ? (
+          <div>
+            <div className="flex items-baseline justify-between mb-1">
+              <label className="text-xs text-slate-500">
+                Win margin:{" "}
+                <span className="font-mono text-slate-900 font-semibold">{marginRuns}</span> runs
+              </label>
+              <span className="text-[11px] text-slate-400">drag the slider</span>
+            </div>
+            <input
+              type="range" min={1} max={100} value={marginRuns}
+              onChange={(e) => setMarginRuns(Number(e.target.value))}
+              className="w-full accent-sky-600"
+            />
+          </div>
+        ) : (
+          <div>
+            <div className="flex items-baseline justify-between mb-1">
+              <label className="text-xs text-slate-500">
+                Balls remaining when chase completes:{" "}
+                <span className="font-mono text-slate-900 font-semibold">{ballsRemaining}</span>
+                {" "}<span className="text-slate-400">({(ballsRemaining / 6).toFixed(1)} overs to spare)</span>
+              </label>
+              <span className="text-[11px] text-slate-400">drag the slider</span>
+            </div>
+            <input
+              type="range" min={0} max={72} value={ballsRemaining}
+              onChange={(e) => setBallsRemaining(Number(e.target.value))}
+              className="w-full accent-sky-600"
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 pt-2">
           <TeamPanel
@@ -172,18 +247,36 @@ export function NRRSensitivity({ standings }: Props) {
             label={`${loserT.short} (loser)`}
             color={loserT.primary}
             nrrBefore={loserNrrBefore}
-            nrrAfter={loserNrrAfter}
+            nrrAfter={fixedLoserNrr}
             pct={sim.loserPct}
             basePct={sim.loserBasePct}
           />
         </div>
 
         <p className="text-[11px] text-slate-400 italic">
-          NRR math is exact (per ICC rules, with the all-out adjustment). Qualifying %
-          comes from a 5,000-run Monte Carlo holding all other matches at 50/50.
+          NRR math is exact per ICC (with the all-out adjustment). Qualifying % comes from
+          a 5,000-run Monte Carlo holding all other matches at 50/50.
         </p>
       </div>
     </div>
+  );
+}
+
+function ModeButton({ active, onClick, children }: {
+  active: boolean; onClick: () => void; children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 text-xs font-semibold rounded-md border-2 transition-colors",
+        active
+          ? "bg-sky-600 border-sky-600 text-white"
+          : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -207,16 +300,16 @@ function TeamPanel({
         <Row
           label="NRR"
           value={`${nrrAfter >= 0 ? "+" : ""}${nrrAfter.toFixed(3)}`}
+          before={`${nrrBefore >= 0 ? "+" : ""}${nrrBefore.toFixed(3)}`}
           delta={nrrDelta}
           formatDelta={(d) => `${d > 0 ? "+" : ""}${d.toFixed(3)}`}
-          before={`${nrrBefore >= 0 ? "+" : ""}${nrrBefore.toFixed(3)}`}
         />
         <Row
           label="Qualify"
           value={`${pct.toFixed(1)}%`}
+          before={`${basePct.toFixed(1)}%`}
           delta={pctDelta}
           formatDelta={(d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}%`}
-          before={`${basePct.toFixed(1)}%`}
         />
       </div>
     </div>

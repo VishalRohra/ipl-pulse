@@ -40,10 +40,19 @@ export interface Innings {
   allottedOvers: number;
 }
 
-/** A user's choice for a remaining match — winner slug, optional margin in runs. */
+/**
+ * A user's choice for a remaining match. Cricket has two ways to win:
+ *  - `runs`: team batting first sets a target, team batting second falls short
+ *  - `wickets`: team batting second successfully chases (with N balls remaining)
+ * If `outcome` is omitted the simulator samples a margin distribution.
+ */
 export type ScenarioPick = {
   winner: TeamSlug;
-  marginRuns?: number;  // positive = winner's runs above loser's; undefined = unspecified
+  outcome?:
+    | { type: "runs"; marginRuns: number }
+    | { type: "wickets"; ballsRemaining: number };
+  /** @deprecated use `outcome` — kept for URL-decoded picks without margin info */
+  marginRuns?: number;
 };
 
 export type ScenarioMap = Record<number, ScenarioPick | undefined>;
