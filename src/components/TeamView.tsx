@@ -11,6 +11,7 @@ import { teamRemainingMatches, opponentOf } from "@/lib/team-helpers";
 import { PathToPlayoffs } from "./PathToPlayoffs";
 import { MarginThresholds } from "./MarginThresholds";
 import { ExternalMatches } from "./ExternalMatches";
+import { ShareCardButton } from "./ShareCardButton";
 import { ChevronLeft } from "lucide-react";
 import { cn, formatMatchDate } from "@/lib/utils";
 
@@ -44,12 +45,15 @@ export function TeamView({ slug }: Props) {
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 transition"
-      >
-        <ChevronLeft className="h-3 w-3" /> Back to all teams
-      </Link>
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 transition"
+        >
+          <ChevronLeft className="h-3 w-3" /> Back to all teams
+        </Link>
+        <ShareCardButton team={slug} label={`Share ${t.short}'s scenario`} />
+      </div>
 
       <section
         className="rounded-xl p-6 text-white relative overflow-hidden"
