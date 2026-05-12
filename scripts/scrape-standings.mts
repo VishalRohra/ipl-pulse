@@ -22,7 +22,7 @@ const standingsPath = join(__dirname, "..", "data", "standings.json");
 const remainingPath = join(__dirname, "..", "data", "remaining.json");
 
 const WIKI_URL = "https://en.wikipedia.org/wiki/2026_Indian_Premier_League";
-const UA = "Mozilla/5.0 (compatible; IPL-Pulse-Scraper/1.0; +https://github.com/VishalRohra/ipl-pulse)";
+const UA = "Mozilla/5.0 (compatible; IPL-Pulse-Scraper/1.0)";
 
 // Wikipedia uses full team names; map to our slugs.
 const NAME_TO_SLUG: Record<string, string> = {

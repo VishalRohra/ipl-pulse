@@ -18,14 +18,7 @@ export function Header() {
             </p>
           </div>
         </Link>
-        <nav className="flex items-center gap-4 text-sm">
-          <a
-            href="https://github.com/"
-            className="text-slate-500 hover:text-slate-900 transition text-xs"
-          >
-            open source ↗
-          </a>
-        </nav>
+        {/* Nav slot kept empty intentionally. */}
       </div>
     </header>
   );
