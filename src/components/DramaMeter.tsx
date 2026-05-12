@@ -30,7 +30,7 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
       </div>
     );
   }
-  const max = top[0].totalImpact;
+  const max = top[0].maxSwing;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -47,10 +47,10 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
       </div>
       {showInfo && (
         <div className="px-4 py-3 bg-sky-50 border-b border-sky-100 text-xs text-slate-700 leading-relaxed">
-          For each match below, we simulated <strong>both outcomes</strong> (home wins vs away wins)
-          and added up the absolute change in every team's qualification % across the two worlds.
-          A high score means flipping this one result moves a lot of probability around — i.e. it's
-          a high-stakes match. The biggest beneficiary line names the team most helped by one of the two outcomes.
+          For each match, we simulated <strong>both outcomes</strong> (home wins vs away wins)
+          and measured how much each team's playoff % moves between the two worlds.
+          The number shown is the <strong>biggest single-team swing</strong> — e.g. "12% for RCB"
+          means RCB's playoff odds change by 12 percentage points depending on this one result.
         </div>
       )}
       <ul className="divide-y divide-slate-100">
@@ -58,7 +58,7 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
           const home = team(imp.match.home);
           const away = team(imp.match.away);
           const date = formatMatchDate(imp.match.date);
-          const widthPct = max > 0 ? (imp.totalImpact / max) * 100 : 0;
+          const widthPct = max > 0 ? (imp.maxSwing / max) * 100 : 0;
 
           // Find the team with the largest signed delta
           const sortedDeltas = Object.entries(imp.perTeamDelta).sort(
@@ -66,6 +66,8 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
           );
           const [topSlug, topDelta] = sortedDeltas[0];
           const topTeam = team(topSlug as keyof typeof imp.perTeamDelta);
+          // The "winner that helps the top team" is the away team if topDelta > 0
+          // (delta is defined as ifAway - ifHome), else the home team.
           const helpedBy = topDelta > 0 ? imp.match.away : imp.match.home;
           const helpedByTeam = team(helpedBy);
 
@@ -79,8 +81,8 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
                   </span>
                   <span className="text-slate-500 text-xs hidden sm:inline">· {date}</span>
                 </div>
-                <span className="text-xs text-slate-500 tabular-nums shrink-0">
-                  {imp.totalImpact.toFixed(0)}% in play
+                <span className="text-xs font-semibold text-slate-700 tabular-nums shrink-0">
+                  ±{imp.maxSwing.toFixed(1)}% for {topTeam.short}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden mb-1.5">
@@ -90,10 +92,9 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
                 />
               </div>
               <p className="text-xs text-slate-500">
-                Most affected:{" "}
-                <span className="font-semibold text-slate-700">{topTeam.short}</span>
-                {" "}— {topDelta > 0 ? "+" : ""}{topDelta.toFixed(1)}% if{" "}
-                <span className={cn("font-semibold", "text-slate-700")}>{helpedByTeam.short}</span>{" "}
+                <span className="font-semibold text-slate-700">{topTeam.short}</span>'s playoff %{" "}
+                {topDelta > 0 ? "rises" : "drops"} {Math.abs(topDelta).toFixed(1)} points if{" "}
+                <span className="font-semibold text-slate-700">{helpedByTeam.short}</span>{" "}
                 wins
               </p>
             </li>

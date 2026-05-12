@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { TeamSlug, TeamStanding } from "@/lib/types";
 import { REMAINING, team, SIM_SEED } from "@/lib/data";
-import { marginThresholdsFor, opponentOf } from "@/lib/team-helpers";
+import { marginThresholdsFor, opponentOf, type MarginMode } from "@/lib/team-helpers";
 import { useScenarioStore } from "@/store/scenario";
 import { cn, formatMatchDate } from "@/lib/utils";
 import { Target } from "lucide-react";
@@ -16,46 +16,62 @@ interface Props {
 /**
  * "How much does the margin matter for THIS team?" — for each of their
  * remaining matches, sample qualifying % at four win margins + one loss.
- * Surfaces NRR cliff-edges that close-points teams care about most.
+ * Toggle between by-runs (defending) and by-wickets (chasing) — the toss
+ * decides which case applies.
  */
 export function MarginThresholds({ standings, slug }: Props) {
   const picks = useScenarioStore((s) => s.picks);
+  const [mode, setMode] = useState<MarginMode>("runs");
   const rows = useMemo(
-    () => marginThresholdsFor(standings, REMAINING, slug, picks, 2500, SIM_SEED),
-    [standings, slug, picks]
+    () => marginThresholdsFor(standings, REMAINING, slug, picks, mode, 2500, SIM_SEED),
+    [standings, slug, picks, mode]
   );
 
   if (rows.length === 0) return null;
   const t = team(slug);
 
+  const sampleHeaders = mode === "runs" ? ["5", "20", "40", "70"] : ["2", "12", "30", "60"];
+  const winLabel = mode === "runs" ? `If ${t.short} wins by… runs` : `If ${t.short} chases with… balls left`;
+  const lossLabel = mode === "runs" ? `If ${t.short} loses by 25 runs` : `If ${t.short}'s chase falls 12 balls short`;
+  const explanation = mode === "runs"
+    ? "Bigger run-margins help your NRR more — but only when you bat first and defend a total."
+    : "Chasing fast (more balls remaining) helps your NRR more — but you have to bat second.";
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 flex-wrap">
         <Target className="h-4 w-4 text-sky-600" />
         <h3 className="text-sm font-semibold text-slate-900">
           How much does margin matter for {t.short}?
         </h3>
+        <div className="ml-auto flex items-center gap-1 text-xs">
+          <ModeButton active={mode === "runs"} onClick={() => setMode("runs")}>
+            By runs
+          </ModeButton>
+          <ModeButton active={mode === "wickets"} onClick={() => setMode("wickets")}>
+            By wickets
+          </ModeButton>
+        </div>
       </div>
       <div className="px-4 py-3 text-xs text-slate-600">
         For each remaining {t.short} match, here's their playoff % at different win margins —
-        plus what happens if they lose. When two columns look the same, the result matters far
-        more than the margin. When they diverge, NRR is doing the work.
+        plus what happens if they lose. {explanation} When two columns look the same,
+        the result matters far more than the margin. When they diverge, NRR is doing the work.
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-[11px] uppercase text-slate-500">
             <tr>
               <th className="px-3 py-2 text-left font-medium">Match</th>
-              <th className="px-3 py-2 text-right font-medium" colSpan={4}>If {t.short} wins by…</th>
-              <th className="px-3 py-2 text-right font-medium">If {t.short} loses</th>
+              <th className="px-3 py-2 text-right font-medium" colSpan={4}>{winLabel}</th>
+              <th className="px-3 py-2 text-right font-medium">{lossLabel}</th>
             </tr>
             <tr className="text-[10px]">
               <th className="px-3 pb-2 text-left text-slate-400 font-normal">opponent · date</th>
-              <th className="px-3 pb-2 text-right text-slate-400 font-normal">5</th>
-              <th className="px-3 pb-2 text-right text-slate-400 font-normal">20</th>
-              <th className="px-3 pb-2 text-right text-slate-400 font-normal">40</th>
-              <th className="px-3 pb-2 text-right text-slate-400 font-normal">70</th>
-              <th className="px-3 pb-2 text-right text-slate-400 font-normal">by 25</th>
+              {sampleHeaders.map((h) => (
+                <th key={h} className="px-3 pb-2 text-right text-slate-400 font-normal">{h}</th>
+              ))}
+              <th className="px-3 pb-2 text-right text-slate-400 font-normal">—</th>
             </tr>
           </thead>
           <tbody>
@@ -70,7 +86,7 @@ export function MarginThresholds({ standings, slug }: Props) {
                     </div>
                   </td>
                   {row.winSamples.map((s) => (
-                    <td key={s.margin} className="px-3 py-2.5 text-right tabular-nums">
+                    <td key={s.sample} className="px-3 py-2.5 text-right tabular-nums">
                       <span
                         className={cn(
                           "font-bold text-sm",
@@ -105,5 +121,23 @@ export function MarginThresholds({ standings, slug }: Props) {
         % shown is the playoff probability if just this match resolves as described — other matches stay 50/50 (or honor your home-page picks).
       </div>
     </div>
+  );
+}
+
+function ModeButton({ active, onClick, children }: {
+  active: boolean; onClick: () => void; children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors",
+        active
+          ? "bg-sky-600 border-sky-600 text-white"
+          : "border-slate-200 text-slate-600 bg-white hover:bg-slate-50"
+      )}
+    >
+      {children}
+    </button>
   );
 }

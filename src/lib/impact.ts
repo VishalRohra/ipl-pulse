@@ -3,8 +3,15 @@ import { simulate } from "./simulate";
 
 export interface MatchImpact {
   match: RemainingMatch;
-  /** Sum of |Δ qualification %| across all teams when home wins vs away wins. */
-  totalImpact: number;
+  /**
+   * Largest single-team qualification swing this match can cause, in
+   * percentage points. "Match #57 has a maxSwing of 12.3" means the most-
+   * affected team's playoff % changes by 12.3pp depending on the result.
+   *
+   * This is the cleanest "how much does this match matter?" metric — it's
+   * a single number a Reddit reader can grasp without a stats glossary.
+   */
+  maxSwing: number;
   /** Per-team Δ% (away-wins minus home-wins). Positive = team prefers away win. */
   perTeamDelta: Record<TeamSlug, number>;
 }
@@ -36,20 +43,20 @@ export function rankMatchesByImpact(
     const ifHome = simulate(standings, remaining, homeWinsScenario, { iterations, seed });
     const ifAway = simulate(standings, remaining, awayWinsScenario, { iterations, seed });
 
-    let total = 0;
+    let maxSwing = 0;
     const perTeam: Record<string, number> = {};
     for (const s of standings) {
       const delta = ifAway.qualifyPct[s.slug] - ifHome.qualifyPct[s.slug];
       perTeam[s.slug] = delta;
-      total += Math.abs(delta);
+      if (Math.abs(delta) > maxSwing) maxSwing = Math.abs(delta);
     }
 
     impacts.push({
       match: m,
-      totalImpact: total / 2, // counted both directions for each team
+      maxSwing,
       perTeamDelta: perTeam as Record<TeamSlug, number>,
     });
   }
 
-  return impacts.sort((a, b) => b.totalImpact - a.totalImpact);
+  return impacts.sort((a, b) => b.maxSwing - a.maxSwing);
 }

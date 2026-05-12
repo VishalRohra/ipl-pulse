@@ -68,38 +68,53 @@ export function pathToPlayoffs(
   return rows.sort((a, b) => b.wins - a.wins || b.qualifyPct - a.qualifyPct);
 }
 
+export type MarginMode = "runs" | "wickets";
+
 export interface MarginThreshold {
   match: RemainingMatch;
-  /** [{margin, pct}] across representative margins (winner = focus team). */
-  winSamples: { margin: number; pct: number }[];
-  /** Qualifying % if the team LOSES this match (all margins similar — sample at 25 runs). */
+  /** [{sample, pct}] across representative margins. `sample` is runs or balls-remaining. */
+  winSamples: { sample: number; pct: number }[];
+  /** Qualifying % if the team LOSES this match (margin held at a representative value). */
   lossPct: number;
 }
 
 /**
  * For each of a team's remaining matches, sample qualifying % across a few
- * representative win margins (and one loss). Lets fans see "how much does
- * margin matter for my team?" at a glance, without dragging sliders.
+ * representative win margins. Lets fans see "how much does margin matter
+ * for my team?" at a glance, without dragging sliders.
+ *
+ * `mode = "runs"` samples win margins of 5, 20, 40, 70 runs (defending).
+ * `mode = "wickets"` samples balls remaining of 2, 12, 30, 60 when chasing
+ *   (the higher the number, the more dominant the chase, the bigger the
+ *   NRR boost — small balls-remaining is a last-ball thriller).
  */
 export function marginThresholdsFor(
   standings: TeamStanding[],
   remaining: RemainingMatch[],
   slug: TeamSlug,
   scenario: ScenarioMap = {},
+  mode: MarginMode = "runs",
   iterations = 2500,
   seed?: number
 ): MarginThreshold[] {
   const matches = teamRemainingMatches(remaining, slug);
-  const winMargins = [5, 20, 40, 70];
+  const samples = mode === "runs" ? [5, 20, 40, 70] : [2, 12, 30, 60];
 
   return matches.map((m) => {
     const opp = opponentOf(m, slug);
-    const winSamples = winMargins.map((margin) => {
-      const overlay: ScenarioMap = { ...scenario, [m.id]: { winner: slug, marginRuns: margin } };
+    const winSamples = samples.map((s) => {
+      const outcome = mode === "runs"
+        ? { type: "runs" as const, marginRuns: s }
+        : { type: "wickets" as const, ballsRemaining: s };
+      const overlay: ScenarioMap = { ...scenario, [m.id]: { winner: slug, outcome } };
       const r = simulate(standings, remaining, overlay, { iterations, seed });
-      return { margin, pct: r.qualifyPct[slug] };
+      return { sample: s, pct: r.qualifyPct[slug] };
     });
-    const lossOverlay: ScenarioMap = { ...scenario, [m.id]: { winner: opp, marginRuns: 25 } };
+    // Loss case is symmetric: opponent wins by a representative margin (25 runs / 12 balls).
+    const lossOutcome = mode === "runs"
+      ? { type: "runs" as const, marginRuns: 25 }
+      : { type: "wickets" as const, ballsRemaining: 12 };
+    const lossOverlay: ScenarioMap = { ...scenario, [m.id]: { winner: opp, outcome: lossOutcome } };
     const lossSim = simulate(standings, remaining, lossOverlay, { iterations, seed });
     return { match: m, winSamples, lossPct: lossSim.qualifyPct[slug] };
   });

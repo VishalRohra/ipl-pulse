@@ -80,12 +80,6 @@ export function TeamView({ slug }: Props) {
         </div>
       </section>
 
-      <PathToPlayoffs standings={STANDINGS} slug={slug} />
-
-      <MarginThresholds standings={STANDINGS} slug={slug} />
-
-      <ExternalMatches standings={STANDINGS} slug={slug} />
-
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100">
           <h3 className="text-sm font-semibold text-slate-900">{t.short}'s remaining matches</h3>
@@ -112,6 +106,12 @@ export function TeamView({ slug }: Props) {
           })}
         </ul>
       </section>
+
+      <PathToPlayoffs standings={STANDINGS} slug={slug} />
+
+      <MarginThresholds standings={STANDINGS} slug={slug} />
+
+      <ExternalMatches standings={STANDINGS} slug={slug} />
     </div>
   );
 }
