@@ -6,7 +6,7 @@ import { REMAINING, team, SIM_SEED } from "@/lib/data";
 import { externalMatchesAffecting } from "@/lib/team-helpers";
 import { useScenarioStore } from "@/store/scenario";
 import { Eye } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate } from "@/lib/utils";
 
 interface Props {
   standings: TeamStanding[];
@@ -53,9 +53,7 @@ export function ExternalMatches({ standings, slug, topN = 5 }: Props) {
         {rows.map(({ impact, teamDelta }) => {
           const home = team(impact.match.home);
           const away = team(impact.match.away);
-          const date = new Date(impact.match.date).toLocaleDateString("en-US", {
-            weekday: "short", month: "short", day: "numeric",
-          });
+          const date = formatMatchDate(impact.match.date);
           // Positive teamDelta means away winning helps THIS team
           const rootFor = teamDelta > 0 ? away : home;
           const widthPct = max > 0 ? (Math.abs(teamDelta) / max) * 100 : 0;

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useDeferredValue } from "react";
+import { useEffect, useMemo, useDeferredValue, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { relativeTimeFrom } from "@/lib/utils";
 import { useScenarioStore } from "@/store/scenario";
 import { simulate } from "@/lib/simulate";
 import { decodeScenario } from "@/lib/scenario";
@@ -59,20 +60,39 @@ export function SimulatorPage() {
     timeStyle: "short",
   });
 
+  // Re-render the relative timestamp every minute so "5 minutes ago" stays current.
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const relativeAsOf = relativeTimeFrom(STANDINGS_AS_OF, now);
+
   return (
     <div className="space-y-6">
       <section className="rounded-xl border border-sky-200 bg-gradient-to-br from-sky-50 to-white p-5">
         <div className="flex flex-wrap items-baseline gap-3 mb-1">
           <h2 className="text-xl font-semibold text-slate-900">Playoff race</h2>
           <span className="text-xs text-slate-500">
-            {COMPLETED_THROUGH} of {TOTAL_LEAGUE_MATCHES} matches done · as of {asOfDate} IST
+            {COMPLETED_THROUGH} of {TOTAL_LEAGUE_MATCHES} matches done
           </span>
         </div>
-        {/* Reserve the second-line height so adding "recalculating…" doesn't shift layout. */}
         <p className="text-sm text-slate-600 min-h-[1.5rem]">
           Click winners of remaining matches below to see how playoff odds shift across all 10 teams.
           {isStale && <span className="ml-2 text-sky-600">recalculating…</span>}
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Data updated <strong className="text-slate-700">{relativeAsOf}</strong>
+          </span>
+          <span className="text-slate-300">·</span>
+          <span>Snapshot: {asOfDate} IST</span>
+          <span className="text-slate-300">·</span>
+          <span>Auto-refreshes every 10 min during match windows from{" "}
+            <a className="text-sky-700 hover:underline" href="https://en.wikipedia.org/wiki/2026_Indian_Premier_League" target="_blank" rel="noreferrer">Wikipedia</a>
+          </span>
+        </div>
       </section>
 
       <div className="grid lg:grid-cols-[1fr_minmax(280px,360px)] gap-4 items-start">

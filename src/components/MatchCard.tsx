@@ -2,13 +2,7 @@
 
 import type { RemainingMatch, TeamSlug } from "@/lib/types";
 import { team } from "@/lib/data";
-import { cn } from "@/lib/utils";
-
-/** True if the match date matches "today" in IST (where IPL is played). */
-function isToday(dateStr: string): boolean {
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
-  return dateStr === today;
-}
+import { cn, formatMatchDate, isMatchTodayIST, isMatchLikelyLive } from "@/lib/utils";
 
 interface Props {
   match: RemainingMatch;
@@ -19,11 +13,7 @@ interface Props {
 export function MatchCard({ match, pickedWinner, onPick }: Props) {
   const home = team(match.home);
   const away = team(match.away);
-  const date = new Date(match.date).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  const date = formatMatchDate(match.date);
 
   function TeamButton({ slug, label, color }: { slug: TeamSlug; label: string; color: string }) {
     const isPicked = pickedWinner === slug;
@@ -44,12 +34,14 @@ export function MatchCard({ match, pickedWinner, onPick }: Props) {
     );
   }
 
-  const live = isToday(match.date);
+  const live = isMatchLikelyLive(match.date);
+  const today = !live && isMatchTodayIST(match.date);
 
   return (
     <div className={cn(
       "rounded-lg border bg-white p-3 shadow-sm transition",
-      live ? "border-rose-300 ring-1 ring-rose-200" : "border-slate-200"
+      live ? "border-rose-300 ring-1 ring-rose-200" :
+      today ? "border-amber-300" : "border-slate-200"
     )}>
       <div className="flex items-center justify-between text-[11px] text-slate-400 mb-2">
         <div className="flex items-center gap-1.5">
@@ -57,6 +49,11 @@ export function MatchCard({ match, pickedWinner, onPick }: Props) {
           {live && (
             <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold uppercase text-[9px] tracking-wider">
               <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" /> Live
+            </span>
+          )}
+          {today && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold uppercase text-[9px] tracking-wider">
+              Today
             </span>
           )}
         </div>

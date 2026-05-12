@@ -5,7 +5,7 @@ import type { TeamSlug, TeamStanding } from "@/lib/types";
 import { REMAINING, team, SIM_SEED } from "@/lib/data";
 import { marginThresholdsFor, opponentOf } from "@/lib/team-helpers";
 import { useScenarioStore } from "@/store/scenario";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate } from "@/lib/utils";
 import { Target } from "lucide-react";
 
 interface Props {
@@ -66,7 +66,7 @@ export function MarginThresholds({ standings, slug }: Props) {
                   <td className="px-3 py-2.5">
                     <div className="font-semibold text-slate-900 text-sm">vs {opp.short}</div>
                     <div className="text-[11px] text-slate-400">
-                      #{row.match.id} · {new Date(row.match.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      #{row.match.id} · {formatMatchDate(row.match.date, { month: "short", day: "numeric" })}
                     </div>
                   </td>
                   {row.winSamples.map((s) => (

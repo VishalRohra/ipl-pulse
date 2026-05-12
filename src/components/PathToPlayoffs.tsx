@@ -5,7 +5,7 @@ import type { TeamSlug, TeamStanding } from "@/lib/types";
 import { REMAINING, team, SIM_SEED } from "@/lib/data";
 import { pathToPlayoffs, teamRemainingMatches, opponentOf } from "@/lib/team-helpers";
 import { useScenarioStore } from "@/store/scenario";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate } from "@/lib/utils";
 
 interface Props {
   standings: TeamStanding[];
@@ -46,7 +46,7 @@ export function PathToPlayoffs({ standings, slug }: Props) {
                   <th key={m.id} className="px-3 py-2 text-center font-medium">
                     vs {opp.short}
                     <div className="text-[10px] text-slate-400 normal-case font-normal">
-                      {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {formatMatchDate(m.date, { month: "short", day: "numeric" })}
                     </div>
                   </th>
                 );

@@ -2,20 +2,30 @@ name: Refresh IPL standings
 
 on:
   schedule:
-    # Twice daily — 19:00 and 20:00 UTC = 00:30 and 01:30 IST.
-    # IPL late matches end around 23:30 IST; we run after that window.
-    - cron: "0 19 * * *"
-    - cron: "0 20 * * *"
-  # Allow manual run from the Actions tab
+    # IPL match windows in UTC (matches end → Wikipedia editors update within ~15min):
+    #
+    #   Afternoon doubleheader (Sat/Sun):  start 15:30 IST = 10:00 UTC, ends ~19:00 IST = 13:30 UTC
+    #   Evening match (every day):         start 19:30 IST = 14:00 UTC, ends ~23:00 IST = 17:30 UTC
+    #
+    # Poll every 10 minutes from 13:00 UTC (post-afternoon-match) through 22:00 UTC
+    # (well past evening-match end + late edits). Cheap on public repos.
+    - cron: "*/10 13-22 * * *"
+    # One more sweep mid-morning IST to catch any overnight Wikipedia corrections.
+    - cron: "0 4 * * *"
   workflow_dispatch: {}
 
 permissions:
-  # Needed for the action to push a commit back to the repo
   contents: write
+
+# Avoid two scrapes racing for the same push if a run takes longer than 10 min.
+concurrency:
+  group: scrape-standings
+  cancel-in-progress: false
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -36,7 +46,7 @@ jobs:
             git add data/standings.json data/remaining.json
             git commit -m "chore(data): auto-refresh standings + remaining matches"
             git push
-            echo "Pushed standings refresh."
+            echo "::notice::Pushed standings refresh — Vercel will auto-deploy."
           else
-            echo "No changes."
+            echo "::notice::No changes."
           fi

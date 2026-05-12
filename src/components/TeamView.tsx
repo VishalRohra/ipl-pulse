@@ -12,7 +12,7 @@ import { PathToPlayoffs } from "./PathToPlayoffs";
 import { MarginThresholds } from "./MarginThresholds";
 import { ExternalMatches } from "./ExternalMatches";
 import { ChevronLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate } from "@/lib/utils";
 
 interface Props {
   slug: TeamSlug;
@@ -100,11 +100,7 @@ export function TeamView({ slug }: Props) {
               <li key={m.id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="text-sm">
                   <div className="text-slate-400 text-xs">
-                    #{m.id} · {new Date(m.date).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })} · {m.venue}
+                    #{m.id} · {formatMatchDate(m.date)} · {m.venue}
                   </div>
                   <div className="font-semibold text-slate-900">
                     {isHome ? `${t.short} (H) vs ${opp.short}` : `${opp.short} (H) vs ${t.short}`}

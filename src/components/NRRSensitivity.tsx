@@ -9,7 +9,7 @@ import {
   nrrAfterWinByWickets,
 } from "@/lib/nrr";
 import { simulate } from "@/lib/simulate";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate } from "@/lib/utils";
 import { TrendingUp } from "lucide-react";
 
 interface Props {
@@ -161,7 +161,7 @@ export function NRRSensitivity({ standings }: Props) {
           >
             {REMAINING.map((m) => (
               <option key={m.id} value={m.id}>
-                #{m.id} · {team(m.home).short} vs {team(m.away).short} · {new Date(m.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                #{m.id} · {team(m.home).short} vs {team(m.away).short} · {formatMatchDate(m.date, { month: "short", day: "numeric" })}
               </option>
             ))}
           </select>

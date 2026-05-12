@@ -6,7 +6,7 @@ import { REMAINING, team, SIM_SEED } from "@/lib/data";
 import { rankMatchesByImpact } from "@/lib/impact";
 import { useScenarioStore } from "@/store/scenario";
 import { Flame, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatMatchDate } from "@/lib/utils";
 
 interface Props {
   standings: TeamStanding[];
@@ -57,11 +57,7 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
         {top.map((imp) => {
           const home = team(imp.match.home);
           const away = team(imp.match.away);
-          const date = new Date(imp.match.date).toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-          });
+          const date = formatMatchDate(imp.match.date);
           const widthPct = max > 0 ? (imp.totalImpact / max) * 100 : 0;
 
           // Find the team with the largest signed delta
