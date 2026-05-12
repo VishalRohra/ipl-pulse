@@ -93,7 +93,7 @@ export function DramaMeter({ standings, topN = 5 }: Props) {
               </div>
               <p className="text-xs text-slate-500">
                 <span className="font-semibold text-slate-700">{topTeam.short}</span>'s playoff %{" "}
-                {topDelta > 0 ? "rises" : "drops"} {Math.abs(topDelta).toFixed(1)} points if{" "}
+                rises {Math.abs(topDelta).toFixed(1)} points if{" "}
                 <span className="font-semibold text-slate-700">{helpedByTeam.short}</span>{" "}
                 wins
               </p>
