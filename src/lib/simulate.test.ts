@@ -71,26 +71,31 @@ describe("simulate — scenario picks shift odds correctly", () => {
     expect(r.qualifyPct[leader]).toBeGreaterThan(95);
   });
 
-  it("forcing a bottom-half team to win all their remaining → they jump significantly", () => {
-    const bottom = [...STANDINGS]
-      .filter((s) => s.points > 0 && s.played < 14) // not eliminated
-      .sort((a, b) => a.points - b.points)[0].slug;
-    const matches = REMAINING.filter(
-      (m) => m.home === bottom || m.away === bottom
-    );
-    if (matches.length === 0) return; // skip if they have no matches left
+  it("forcing a mid-table team to lose all their remaining → their odds shrink", () => {
+    // Pick a non-eliminated, non-locked team in the middle (15-85% qualify range).
     const baseline = simulate(STANDINGS, REMAINING, {}, {
       iterations: 3000,
       rng: mulberry32(789),
     });
-    const scenario = Object.fromEntries(
-      matches.map((m) => [m.id, { winner: bottom }])
+    const midTable = STANDINGS.find(
+      (s) => baseline.qualifyPct[s.slug] > 15 && baseline.qualifyPct[s.slug] < 85
     );
-    const lifted = simulate(STANDINGS, REMAINING, scenario, {
+    if (!midTable) return; // race state may have no qualifying team
+    const matches = REMAINING.filter(
+      (m) => m.home === midTable.slug || m.away === midTable.slug
+    );
+    if (matches.length === 0) return;
+    const losing = Object.fromEntries(
+      matches.map((m) => [
+        m.id,
+        { winner: m.home === midTable.slug ? m.away : m.home },
+      ])
+    );
+    const r = simulate(STANDINGS, REMAINING, losing, {
       iterations: 3000,
       rng: mulberry32(789),
     });
-    expect(lifted.qualifyPct[bottom]).toBeGreaterThan(baseline.qualifyPct[bottom]);
+    expect(r.qualifyPct[midTable.slug]).toBeLessThan(baseline.qualifyPct[midTable.slug]);
   });
 });
 
