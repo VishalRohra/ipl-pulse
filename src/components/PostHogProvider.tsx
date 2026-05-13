@@ -30,6 +30,10 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       respect_dnt: true,
       person_profiles: "identified_only",
     });
+    // Tag every event so this site is filterable inside a multi-app PostHog
+    // project (e.g. sharing the project with founderwiki.co). Use the filter
+    // `app = ipl-pulse` in any PostHog insight/dashboard.
+    posthog.register({ app: "ipl-pulse" });
   }, []);
 
   return (
