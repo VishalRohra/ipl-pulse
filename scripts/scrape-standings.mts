@@ -107,7 +107,15 @@ function parsePointsTable(html: string): ParsedStanding[] {
   return out;
 }
 
-/** Sanity-check the parsed table: each team's played + remaining = 14, sums consistent. */
+/**
+ * Sanity-check the parsed table.
+ *
+ * IMPORTANT: when Wikipedia is fresh and our local remaining.json still
+ * contains the just-played match, naive `played + ALL_remaining` over-counts
+ * by 1. We compute `matchesDone` first, then validate against the *unplayed*
+ * remaining matches (id > matchesDone). That way the bookkeeping holds
+ * during the small window between Wikipedia updating and us pruning.
+ */
 function validate(parsed: ParsedStanding[], remainingMatches: { id: number; home: string; away: string }[]) {
   if (parsed.length !== 10) {
     throw new Error(`Expected 10 teams, got ${parsed.length}`);
@@ -117,16 +125,16 @@ function validate(parsed: ParsedStanding[], remainingMatches: { id: number; home
     throw new Error(`Inconsistent: total team-games = ${totalPlayed} (must be even)`);
   }
   const matchesDone = totalPlayed / 2;
-  // Each team's played + remaining = 14
+  const unplayed = remainingMatches.filter((m) => m.id > matchesDone);
+
   for (const t of parsed) {
-    const remForTeam = remainingMatches.filter((m) => m.home === t.slug || m.away === t.slug).length;
+    const remForTeam = unplayed.filter((m) => m.home === t.slug || m.away === t.slug).length;
     if (t.played + remForTeam !== 14) {
       throw new Error(
-        `${t.slug}: played=${t.played} + remaining=${remForTeam} = ${t.played + remForTeam}, expected 14`
+        `${t.slug}: played=${t.played} + remaining(after prune)=${remForTeam} = ${t.played + remForTeam}, expected 14`
       );
     }
   }
-  // Points = 2W + NR for each team
   for (const t of parsed) {
     if (t.points !== 2 * t.won + t.noResult) {
       throw new Error(`${t.slug}: points=${t.points} ≠ 2W+NR (${2 * t.won + t.noResult})`);
