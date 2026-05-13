@@ -6,6 +6,7 @@ import { useScenarioStore } from "@/store/scenario";
 import { REMAINING } from "@/lib/data";
 import { encodeScenario } from "@/lib/scenario";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 import type { TeamSlug } from "@/lib/types";
 
 interface Props {
@@ -27,10 +28,18 @@ export function ShareCardButton({ team, variant = "primary", label }: Props) {
 
   async function handleClick() {
     setState("loading");
+    const encoded = encodeScenario(picks, REMAINING);
+    const hasPicks = !!(encoded && /[01]/.test(encoded));
+    const picksCount = Object.keys(picks).length;
+    track("share_card_downloaded", {
+      variant: team ? "team" : "global",
+      team,
+      picks_count: picksCount,
+      has_picks: hasPicks,
+    });
     try {
       const params = new URLSearchParams();
-      const encoded = encodeScenario(picks, REMAINING);
-      if (encoded && /[01]/.test(encoded)) params.set("p", encoded);
+      if (hasPicks) params.set("p", encoded);
       if (team) params.set("team", team);
       const qs = params.toString();
       const url = qs ? `/api/og?${qs}` : "/api/og";
@@ -38,7 +47,7 @@ export function ShareCardButton({ team, variant = "primary", label }: Props) {
       const blob = await res.blob();
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      const tag = team ?? (encoded && /[01]/.test(encoded) ? encoded : "live");
+      const tag = team ?? (hasPicks ? encoded : "live");
       link.download = `ipl-pulse-${tag}.png`;
       link.click();
       URL.revokeObjectURL(link.href);

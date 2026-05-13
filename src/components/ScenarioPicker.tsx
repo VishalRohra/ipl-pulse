@@ -5,6 +5,8 @@ import { REMAINING } from "@/lib/data";
 import { MatchCard } from "./MatchCard";
 import { ShareCardButton } from "./ShareCardButton";
 import { RotateCcw } from "lucide-react";
+import { track } from "@/lib/analytics";
+import type { TeamSlug } from "@/lib/types";
 
 export function ScenarioPicker() {
   const picks = useScenarioStore((s) => s.picks);
@@ -12,6 +14,18 @@ export function ScenarioPicker() {
   const reset = useScenarioStore((s) => s.reset);
 
   const pickedCount = Object.keys(picks).length;
+
+  function handlePick(matchId: number, winner: TeamSlug | null) {
+    setPick(matchId, winner);
+    if (winner) {
+      track("match_picked", { match_id: matchId, winner, source: "home" });
+    }
+  }
+
+  function handleReset() {
+    track("scenario_reset", { picks_count: pickedCount, source: "home" });
+    reset();
+  }
 
   return (
     <div className="space-y-3">
@@ -24,7 +38,7 @@ export function ScenarioPicker() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={reset}
+            onClick={handleReset}
             disabled={pickedCount === 0}
             className="flex items-center gap-1 px-3 py-1.5 text-xs rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
@@ -39,7 +53,7 @@ export function ScenarioPicker() {
             key={m.id}
             match={m}
             pickedWinner={picks[m.id]?.winner ?? null}
-            onPick={(w) => setPick(m.id, w)}
+            onPick={(w) => handlePick(m.id, w)}
           />
         ))}
       </div>

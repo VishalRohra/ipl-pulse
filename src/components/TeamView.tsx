@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useDeferredValue } from "react";
+import { useEffect, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import type { TeamSlug } from "@/lib/types";
 import { STANDINGS, REMAINING, team, SIM_SEED, SIM_ITERATIONS } from "@/lib/data";
@@ -8,6 +8,7 @@ import { rankTeams } from "@/lib/tiebreaker";
 import { simulate } from "@/lib/simulate";
 import { useScenarioStore } from "@/store/scenario";
 import { teamRemainingMatches, opponentOf } from "@/lib/team-helpers";
+import { track } from "@/lib/analytics";
 import { PathToPlayoffs } from "./PathToPlayoffs";
 import { MarginThresholds } from "./MarginThresholds";
 import { ExternalMatches } from "./ExternalMatches";
@@ -23,6 +24,10 @@ export function TeamView({ slug }: Props) {
   const t = team(slug);
   const picks = useScenarioStore((s) => s.picks);
   const deferredPicks = useDeferredValue(picks);
+
+  useEffect(() => {
+    track("team_viewed", { team: slug });
+  }, [slug]);
 
   const standing = STANDINGS.find((s) => s.slug === slug)!;
   const ranked = useMemo(() => rankTeams(STANDINGS), []);
@@ -139,9 +144,16 @@ function PickRow({
 
   function btn(target: TeamSlug, label: string, color: string) {
     const isPicked = pick === target;
+    function handleClick() {
+      const next = isPicked ? null : target;
+      setPick(matchId, next);
+      if (next) {
+        track("match_picked", { match_id: matchId, winner: next, source: "team_page", focus_team: slug });
+      }
+    }
     return (
       <button
-        onClick={() => setPick(matchId, isPicked ? null : target)}
+        onClick={handleClick}
         className={cn(
           "px-3 py-1.5 text-xs font-semibold rounded-md border-2 transition-colors",
           isPicked

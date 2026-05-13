@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useDeferredValue, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { relativeTimeFrom } from "@/lib/utils";
+import { track } from "@/lib/analytics";
 import { useScenarioStore } from "@/store/scenario";
 import { simulate } from "@/lib/simulate";
 import { decodeScenario } from "@/lib/scenario";
@@ -30,7 +31,12 @@ export function SimulatorPage() {
   useEffect(() => {
     const encoded = params.get("p");
     if (encoded) {
-      loadFromMap(decodeScenario(encoded, REMAINING));
+      const decoded = decodeScenario(encoded, REMAINING);
+      loadFromMap(decoded);
+      track("scenario_loaded_from_url", {
+        picks_count: Object.keys(decoded).length,
+        encoded,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
