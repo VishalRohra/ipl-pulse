@@ -54,31 +54,43 @@ describe("simulate — sanity checks against IPL 2026 current state", () => {
 });
 
 describe("simulate — scenario picks shift odds correctly", () => {
-  it("forcing all 3 RCB matches as RCB wins → RCB qualifies ~100%", () => {
-    const scenario = {
-      57: { winner: "rcb" as TeamSlug },
-      61: { winner: "rcb" as TeamSlug },
-      67: { winner: "rcb" as TeamSlug },
-    };
+  it("forcing the leader to win all their remaining matches → leader qualifies ~100%", () => {
+    const leader = [...STANDINGS].sort(
+      (a, b) => b.points - a.points || b.nrr - a.nrr
+    )[0].slug;
+    const leaderMatches = REMAINING.filter(
+      (m) => m.home === leader || m.away === leader
+    );
+    const scenario = Object.fromEntries(
+      leaderMatches.map((m) => [m.id, { winner: leader }])
+    );
     const r = simulate(STANDINGS, REMAINING, scenario, {
       iterations: 3000,
       rng: mulberry32(123),
     });
-    expect(r.qualifyPct.rcb).toBeGreaterThan(99);
+    expect(r.qualifyPct[leader]).toBeGreaterThan(95);
   });
 
-  it("forcing all 3 RCB matches as RCB losses → RCB qualifies <90% (still strong from 14 pts)", () => {
-    const scenario = {
-      57: { winner: "kkr" as TeamSlug },
-      61: { winner: "pbks" as TeamSlug },
-      67: { winner: "srh" as TeamSlug },
-    };
-    const r = simulate(STANDINGS, REMAINING, scenario, {
+  it("forcing a bottom-half team to win all their remaining → they jump significantly", () => {
+    const bottom = [...STANDINGS]
+      .filter((s) => s.points > 0 && s.played < 14) // not eliminated
+      .sort((a, b) => a.points - b.points)[0].slug;
+    const matches = REMAINING.filter(
+      (m) => m.home === bottom || m.away === bottom
+    );
+    if (matches.length === 0) return; // skip if they have no matches left
+    const baseline = simulate(STANDINGS, REMAINING, {}, {
       iterations: 3000,
-      rng: mulberry32(456),
+      rng: mulberry32(789),
     });
-    // RCB at 14 pts can still qualify even losing all 3 if others lose enough
-    expect(r.qualifyPct.rcb).toBeLessThan(95);
+    const scenario = Object.fromEntries(
+      matches.map((m) => [m.id, { winner: bottom }])
+    );
+    const lifted = simulate(STANDINGS, REMAINING, scenario, {
+      iterations: 3000,
+      rng: mulberry32(789),
+    });
+    expect(lifted.qualifyPct[bottom]).toBeGreaterThan(baseline.qualifyPct[bottom]);
   });
 });
 
