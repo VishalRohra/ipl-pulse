@@ -1,6 +1,6 @@
 {
-  "asOf": "2026-05-20T16:29:27.240Z",
-  "completedThrough": 64,
+  "asOf": "2026-05-20T19:02:21.808Z",
+  "completedThrough": 65,
   "totalLeagueMatches": 70,
   "playoffSpots": 4,
   "source": "Source-of-truth: published IPL points table (ESPNCricinfo / IPLT20). Updated after match #56 (GT beat SRH by 82 runs). Do NOT derive standings from individual match reports — always cross-check against the live table.",
@@ -51,6 +51,15 @@
       "nrr": 0.227
     },
     {
+      "slug": "kkr",
+      "played": 13,
+      "won": 6,
+      "lost": 6,
+      "noResult": 1,
+      "points": 13,
+      "nrr": 0.011
+    },
+    {
       "slug": "csk",
       "played": 13,
       "won": 6,
@@ -69,22 +78,13 @@
       "nrr": -0.871
     },
     {
-      "slug": "kkr",
-      "played": 12,
-      "won": 5,
-      "lost": 6,
-      "noResult": 1,
-      "points": 11,
-      "nrr": -0.038
-    },
-    {
       "slug": "mi",
-      "played": 12,
+      "played": 13,
       "won": 4,
-      "lost": 8,
+      "lost": 9,
       "noResult": 0,
       "points": 8,
-      "nrr": -0.504
+      "nrr": -0.51
     },
     {
       "slug": "lsg",
