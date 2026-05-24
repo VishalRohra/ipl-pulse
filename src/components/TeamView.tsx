@@ -89,6 +89,7 @@ export function TeamView({ slug }: Props) {
         </div>
       </section>
 
+      {remainingForTeam.length > 0 && (
       <section className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100">
           <h3 className="text-sm font-semibold text-slate-900">{t.short}'s remaining matches</h3>
@@ -115,6 +116,7 @@ export function TeamView({ slug }: Props) {
           })}
         </ul>
       </section>
+      )}
 
       <PathToPlayoffs standings={STANDINGS} slug={slug} />
 

@@ -28,6 +28,14 @@ type Mode = "runs" | "wickets";
  * Both move NRR — but quite differently. This panel shows both modes side by side.
  */
 export function NRRSensitivity({ standings }: Props) {
+  // Empty REMAINING means the league stage is over — nothing left to model.
+  // REMAINING is a static import so this branch is stable across all renders,
+  // which keeps React's rules-of-hooks happy.
+  if (REMAINING.length === 0) return null;
+  return <NRRSensitivityInner standings={standings} />;
+}
+
+function NRRSensitivityInner({ standings }: Props) {
   const [matchId, setMatchId] = useState<number>(REMAINING[0].id);
   const [winnerOverride, setWinnerOverride] = useState<TeamSlug | null>(null);
   const [mode, setMode] = useState<Mode>("runs");
